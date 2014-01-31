@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"encoding/json"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -10,20 +10,21 @@ import (
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+
+	// "github.com/kamoljan/nefeted/ad"
 )
 
 type Ad struct {
 	Profile     uint64 // Facebook profile ID
-	Title       string
 	Image       string
 	Thumb       string
+	Title       string
 	Category    uint64
 	Description string
 	Price       uint64
-	Phone       string
-	Date        time.Time
 	Currency    string
 	Report      uint64
+	Date        time.Time
 }
 
 func (a *Ad) save() error {
@@ -49,53 +50,97 @@ func (a *Ad) save() error {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Phone:", result.Phone)
+	fmt.Println("Description lah:", result.Description)
 
 	return nil //XXX tmp
 }
 
-func adHandler(w http.ResponseWriter, r *http.Request, fid string) {
-	if r.Method == "POST" {
-		fmt.Printf("r.Method = %s\n", r.Method)
-		fmt.Printf("r.URL = %s\n", r.URL)
-		fmt.Printf("r.profile = %s\n", r.FormValue("profile"))
+// func Message(status string, message string, params []string) []byte {
+func Message(status string, message string) []byte {
+	type Message struct {
+		Status  string
+		Message string
+		//Params  []string
+	}
+	m := Message{
+		Status:  status,
+		Message: message,
+		//Params:  params,
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		fmt.Println("error:", err)
+		panic(err)
+	}
+	return b
+}
 
+func adHandler(w http.ResponseWriter, r *http.Request, fid string) {
+	fmt.Printf("r.Method = %s\n", r.Method)
+	fmt.Printf("r.URL = %s\n", r.URL)
+
+	if r.Method == "POST" {
+		// TODO: refactor it!
 		profile, err := strconv.ParseUint(r.FormValue("profile"), 10, 64)
 		if err != nil {
-			// panic(err)
+			w.Write(Message("Error", "Profile is missing"))
+			return
 		}
 		category, err := strconv.ParseUint(r.FormValue("category"), 10, 64)
 		if err != nil {
-			//panic(err)
+			w.Write(Message("Error", "Category is missing"))
+			return
 		}
-
 		price, err := strconv.ParseUint(r.FormValue("price"), 10, 64)
 		if err != nil {
-			//panic(err)
+			w.Write(Message("Error", "Price is missing"))
+			return
 		}
-
+		title := r.FormValue("title")
+		if title == "" {
+			w.Write(Message("Error", "Title is missing"))
+			return
+		}
+		image := r.FormValue("image")
+		if image == "" {
+			w.Write(Message("Error", "Image is missing"))
+			return
+		}
+		thumb := r.FormValue("thumb")
+		if thumb == "" {
+			w.Write(Message("Error", "Thumb is missing"))
+			return
+		}
+		description := r.FormValue("description")
+		if description == "" {
+			w.Write(Message("Error", "Description is missing"))
+			return
+		}
+		currency := r.FormValue("currency")
+		if currency == "" {
+			w.Write(Message("Error", "Currency is missing"))
+			return
+		}
 		ad := &Ad{
 			Profile:     profile,
-			Title:       r.FormValue("title"),
-			Image:       r.FormValue("image"),
-			Thumb:       r.FormValue("thumb"),
+			Image:       image,
+			Thumb:       thumb,
+			Title:       title,
 			Category:    category,
-			Description: r.FormValue("description"),
+			Description: description,
 			Price:       price,
-			Phone:       r.FormValue("phone"),
-			Date:        time.Now(),
-			Currency:    r.FormValue("currency"),
+			Currency:    currency,
 			Report:      0,
+			Date:        time.Now(),
 		}
 
-		fmt.Printf("ad = %s", ad)
 		err = ad.save()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Write([]byte("This is GET request " + r.Method))
+		w.Write(Message("OK", "Saved!"))
 	} else {
 		http.NotFound(w, r)
 		return
