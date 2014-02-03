@@ -24,6 +24,16 @@ type Ad struct {
 	Date        time.Time
 }
 
+type Msg struct {
+	Status, Message string
+}
+
+type MsgOk struct {
+	Status  string
+	Message Ad
+}
+
+//********************** POST { **********************
 func (ad *Ad) saveAd() error {
 	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
 	if err != nil {
@@ -39,40 +49,11 @@ func (ad *Ad) saveAd() error {
 	if err != nil {
 		panic(err)
 	}
-
-	return nil //XXX tmp
-}
-
-func getAdById(fid string) []byte {
-	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close()
-
-	// Optional. Switch the session to a monotonic behavior.
-	session.SetMode(mgo.Monotonic, true)
-
-	result := Ad{}
-	c := session.DB("sa").C("ad")
-	err = c.FindId(bson.ObjectIdHex(fid)).One(&result)
-	if err != nil {
-		panic(err)
-	}
-	b, err := json.Marshal(result)
-	if err != nil {
-		fmt.Println("error:", err)
-		panic(err)
-	}
-	return b
+	return err
 }
 
 func Message(status string, message string) []byte {
-	type Message struct {
-		Status  string
-		Message string
-	}
-	m := Message{
+	m := Msg{
 		Status:  status,
 		Message: message,
 	}
@@ -140,14 +121,53 @@ func PostAd(w http.ResponseWriter, r *http.Request, fid string) {
 	}
 	err = ad.saveAd()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.Write(Message("ERROR", "Could not save your ad, please, try again later"))
 		return
 	}
 	w.Write(Message("OK", "Saved!"))
 }
 
-func GetAd(w http.ResponseWriter, r *http.Request, fid string) {
-	fmt.Println("GetAd")
-	w.Write([]byte(getAdById(fid)))
+//********************** } POST *********************
 
+//********************** GET { **********************
+func getAdById(fid string) (Ad, error) {
+	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+
+	result := Ad{}
+	c := session.DB("sa").C("ad")
+	err = c.FindId(bson.ObjectIdHex(fid)).One(&result)
+	return result, err
 }
+
+func GetAd(w http.ResponseWriter, r *http.Request, fid string) {
+	result, err := getAdById(fid)
+	var m interface{}
+	if err != nil {
+		m = Msg{
+			Status:  "ERROR",
+			Message: "Ad not found",
+		}
+	} else {
+		m = MsgOk{
+			Status:  "OK",
+			Message: result,
+		}
+	}
+
+	fmt.Println("result = %+v", result)
+
+	b, err := json.Marshal(m)
+	if err != nil {
+		panic(err)
+	}
+	w.Write(b)
+}
+
+//********************** } GET **********************
