@@ -24,7 +24,7 @@ type Ad struct {
 	Date        time.Time
 }
 
-func (a *Ad) Save() error {
+func (ad *Ad) saveAd() error {
 	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
 	if err != nil {
 		panic(err)
@@ -35,19 +35,36 @@ func (a *Ad) Save() error {
 	session.SetMode(mgo.Monotonic, true)
 
 	c := session.DB("sa").C("ad")
-	err = c.Insert(&a)
+	err = c.Insert(&ad)
 	if err != nil {
 		panic(err)
 	}
-
-	result := Ad{}
-	err = c.Find(bson.M{"title": "test"}).One(&result)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Description lah:", result.Description)
 
 	return nil //XXX tmp
+}
+
+func getAdById(fid string) []byte {
+	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+
+	result := Ad{}
+	c := session.DB("sa").C("ad")
+	err = c.FindId(bson.ObjectIdHex(fid)).One(&result)
+	if err != nil {
+		panic(err)
+	}
+	b, err := json.Marshal(result)
+	if err != nil {
+		fmt.Println("error:", err)
+		panic(err)
+	}
+	return b
 }
 
 func Message(status string, message string) []byte {
@@ -121,7 +138,7 @@ func PostAd(w http.ResponseWriter, r *http.Request, fid string) {
 		Report:      0,
 		Date:        time.Now(),
 	}
-	err = ad.Save()
+	err = ad.saveAd()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -130,5 +147,7 @@ func PostAd(w http.ResponseWriter, r *http.Request, fid string) {
 }
 
 func GetAd(w http.ResponseWriter, r *http.Request, fid string) {
-	fmt.Println("getAd")
+	fmt.Println("GetAd")
+	w.Write([]byte(getAdById(fid)))
+
 }
