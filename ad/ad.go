@@ -65,7 +65,7 @@ func Message(status string, message string) []byte {
 	return b
 }
 
-func PostAd(w http.ResponseWriter, r *http.Request, fid string) {
+func PostAd(w http.ResponseWriter, r *http.Request) {
 	// TODO: refactor it!
 	profile, err := strconv.ParseUint(r.FormValue("profile"), 10, 64)
 	if err != nil {

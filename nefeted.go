@@ -8,7 +8,8 @@ import (
 	"github.com/kamoljan/nefeted/ad"
 )
 
-var validPath = regexp.MustCompile("^/(fid)/([a-zA-Z0-9]+)$")
+// FIXME: ad/save POST, ad/objectid GET
+var validPath = regexp.MustCompile("^/(ad|search)/([a-zA-Z0-9]+)$")
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +18,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			http.NotFound(w, r)
 			return
 		}
-		fn(w, r, m[2])
+		fn(w, r, m[2]) //FIXME: ad/save POST m[2] is not needed
 	}
 }
 
@@ -26,7 +27,7 @@ func adHandler(w http.ResponseWriter, r *http.Request, fid string) {
 	fmt.Printf("r.URL = %s\n", r.URL)
 
 	if r.Method == "POST" {
-		ad.PostAd(w, r, fid)
+		ad.PostAd(w, r)
 	} else if r.Method == "GET" {
 		ad.GetAd(w, r, fid)
 	} else {
