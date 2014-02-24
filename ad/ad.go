@@ -1,14 +1,14 @@
 package ad
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+
+	"github.com/kamoljan/nefeted/json"
 )
 
 type Ad struct {
@@ -24,21 +24,16 @@ type Ad struct {
 	Date        time.Time
 }
 
-type Msg struct {
-	Status, Message string
-}
-
-type MsgOk struct {
-	Status  string
-	Message Ad
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 //********************** POST { **********************
 func (ad *Ad) saveAd() error {
 	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 	defer session.Close()
 
 	// Optional. Switch the session to a monotonic behavior.
@@ -46,65 +41,50 @@ func (ad *Ad) saveAd() error {
 
 	c := session.DB("sa").C("ad")
 	err = c.Insert(&ad)
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 	return err
-}
-
-func Message(status string, message string) []byte {
-	m := Msg{
-		Status:  status,
-		Message: message,
-	}
-	b, err := json.Marshal(m)
-	if err != nil {
-		fmt.Println("error:", err)
-		panic(err)
-	}
-	return b
 }
 
 func PostAd(w http.ResponseWriter, r *http.Request) {
 	// TODO: refactor it!
 	profile, err := strconv.ParseUint(r.FormValue("profile"), 10, 64)
 	if err != nil {
-		w.Write(Message("Error", "Profile is missing"))
+		w.Write(json.Message("Error", "Profile is missing"))
 		return
 	}
 	category, err := strconv.ParseUint(r.FormValue("category"), 10, 64)
 	if err != nil {
-		w.Write(Message("Error", "Category is missing"))
+		w.Write(json.Message("Error", "Category is missing"))
 		return
 	}
 	price, err := strconv.ParseUint(r.FormValue("price"), 10, 64)
 	if err != nil {
-		w.Write(Message("Error", "Price is missing"))
+		w.Write(json.Message("Error", "Price is missing"))
 		return
 	}
 	title := r.FormValue("title")
 	if title == "" {
-		w.Write(Message("Error", "Title is missing"))
+		w.Write(json.Message("Error", "Title is missing"))
 		return
 	}
 	image := r.FormValue("image")
 	if image == "" {
-		w.Write(Message("Error", "Image is missing"))
+		w.Write(json.Message("Error", "Image is missing"))
 		return
 	}
 	thumb := r.FormValue("thumb")
 	if thumb == "" {
-		w.Write(Message("Error", "Thumb is missing"))
+		w.Write(json.Message("Error", "Thumb is missing"))
 		return
 	}
 	description := r.FormValue("description")
 	if description == "" {
-		w.Write(Message("Error", "Description is missing"))
+		w.Write(json.Message("Error", "Description is missing"))
 		return
 	}
 	currency := r.FormValue("currency")
 	if currency == "" {
-		w.Write(Message("Error", "Currency is missing"))
+		w.Write(json.Message("Error", "Currency is missing"))
 		return
 	}
 	ad := Ad{
@@ -121,20 +101,18 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 	}
 	err = ad.saveAd()
 	if err != nil {
-		w.Write(Message("ERROR", "Could not save your ad, please, try again later"))
+		w.Write(json.Message("ERROR", "Could not save your ad, please, try again later"))
 		return
 	}
-	w.Write(Message("OK", "Saved!"))
+	w.Write(json.Message("OK", "Saved!"))
 }
 
 //********************** } POST *********************
 
 //********************** GET { **********************
-func getAdById(fid string) (Ad, error) {
+func getAdById(id string) (Ad, error) {
 	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 	defer session.Close()
 
 	// Optional. Switch the session to a monotonic behavior.
@@ -142,32 +120,35 @@ func getAdById(fid string) (Ad, error) {
 
 	result := Ad{}
 	c := session.DB("sa").C("ad")
-	err = c.FindId(bson.ObjectIdHex(fid)).One(&result)
+	err = c.FindId(bson.ObjectIdHex(id)).One(&result)
 	return result, err
 }
 
-func GetAd(w http.ResponseWriter, r *http.Request, fid string) {
-	result, err := getAdById(fid)
-	var m interface{}
+// TODO: read it http://stackoverflow.com/questions/17998943/golang-library-package-that-returns-json-string-from-http-request
+/*
+{
+	Status: "OK",
+	Message: {
+	Profile: 123412341134123,
+	Image: "12412341234",
+	Thumb: "asdfasfasdfaf",
+	Title: "test",
+	Category: 323,
+	Description: "dasfasdfas asdfadsf adsfadfadsfadsf qwerqwerqwer adfasdfdf",
+	Price: 1241234123,
+	Currency: "qwerqwer",
+	Report: 0,
+	Date: "2014-02-03T18:09:43.309+08:00"
+	}
+}
+*/
+func GetAd(w http.ResponseWriter, r *http.Request, id string) {
+	result, err := getAdById(id)
 	if err != nil {
-		m = Msg{
-			Status:  "ERROR",
-			Message: "Ad not found",
-		}
+		w.Write(json.Message("ERROR", "Ad not found"))
 	} else {
-		m = MsgOk{
-			Status:  "OK",
-			Message: result,
-		}
+		w.Write(json.Message("OK", result))
 	}
-
-	fmt.Println("result = %+v", result)
-
-	b, err := json.Marshal(m)
-	if err != nil {
-		panic(err)
-	}
-	w.Write(b)
 }
 
 //********************** } GET **********************
