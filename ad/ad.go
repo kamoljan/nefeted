@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,8 +14,9 @@ import (
 
 type Ad struct {
 	Profile     uint64 // Facebook profile ID
-	Image       string
-	Thumb       string
+	Baby        string
+	Infant      string
+	Newborn     string
 	Title       string
 	Category    uint64
 	Description string
@@ -52,6 +54,22 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 		w.Write(json.Message("Error", "Profile is missing"))
 		return
 	}
+	baby := r.FormValue("baby")
+	if baby == "" {
+		w.Write(json.Message("Error", "Baby is missing"))
+		return
+	}
+	infant := r.FormValue("infant")
+	if infant == "" {
+		w.Write(json.Message("Error", "Infant is missing"))
+		return
+	}
+	newborn := r.FormValue("newborn")
+	if newborn == "" {
+		w.Write(json.Message("Error", "Newborn is missing"))
+		return
+	}
+	fmt.Println(r.FormValue("category"))
 	category, err := strconv.ParseUint(r.FormValue("category"), 10, 64)
 	if err != nil {
 		w.Write(json.Message("Error", "Category is missing"))
@@ -67,16 +85,6 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 		w.Write(json.Message("Error", "Title is missing"))
 		return
 	}
-	image := r.FormValue("image")
-	if image == "" {
-		w.Write(json.Message("Error", "Image is missing"))
-		return
-	}
-	thumb := r.FormValue("thumb")
-	if thumb == "" {
-		w.Write(json.Message("Error", "Thumb is missing"))
-		return
-	}
 	description := r.FormValue("description")
 	if description == "" {
 		w.Write(json.Message("Error", "Description is missing"))
@@ -89,8 +97,9 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 	}
 	ad := Ad{
 		Profile:     profile,
-		Image:       image,
-		Thumb:       thumb,
+		Baby:        baby,
+		Infant:      infant,
+		Newborn:     newborn,
 		Title:       title,
 		Category:    category,
 		Description: description,
