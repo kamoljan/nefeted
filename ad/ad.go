@@ -1,7 +1,7 @@
 package ad
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -9,44 +9,43 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 
+	"github.com/kamoljan/ikura/api"
+	"github.com/kamoljan/ikura/conf"
 	"github.com/kamoljan/nefeted/json"
 )
 
 type Ad struct {
-	Profile     uint64 // Facebook profile ID
-	Baby        string
-	Infant      string
-	Newborn     string
-	Title       string
-	Category    uint64
-	Description string
-	Price       uint64
-	Currency    string
-	Report      uint64
-	Date        time.Time
-}
-
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
+	Profile     uint64    `json:"profile"` // Facebook profile ID
+	Title       string    `json:"title"`
+	Category    uint64    `json:"category"`
+	Description string    `json:"description"`
+	Price       uint64    `json:"price"`
+	Currency    string    `json:"currency"`
+	Report      uint64    `json:"report"`
+	Date        time.Time `json:"date"`
+	Image1      api.Egg   `json:"image1"`
+	Image2      api.Egg   `json:"image2"`
+	Image3      api.Egg   `json:"image3"`
 }
 
 //********************** POST { **********************
 func (ad *Ad) saveAd() error {
-	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
-	check(err)
+	session, err := mgo.Dial(conf.Mongodb)
+	if err != nil {
+		log.Fatal("Unable to connect to DB ", err)
+	}
 	defer session.Close()
 
-	// Optional. Switch the session to a monotonic behavior.
-	session.SetMode(mgo.Monotonic, true)
-
+	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
 	c := session.DB("sa").C("ad")
 	err = c.Insert(&ad)
-	check(err)
+	if err != nil {
+		log.Fatal("Unable to save to DB ", err)
+	}
 	return err
 }
 
+// newborn1, newborn2, newborn3 ...
 func PostAd(w http.ResponseWriter, r *http.Request) {
 	// TODO: refactor it!
 	profile, err := strconv.ParseUint(r.FormValue("profile"), 10, 64)
@@ -54,22 +53,7 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 		w.Write(json.Message("Error", "Profile is missing"))
 		return
 	}
-	baby := r.FormValue("baby")
-	if baby == "" {
-		w.Write(json.Message("Error", "Baby is missing"))
-		return
-	}
-	infant := r.FormValue("infant")
-	if infant == "" {
-		w.Write(json.Message("Error", "Infant is missing"))
-		return
-	}
-	newborn := r.FormValue("newborn")
-	if newborn == "" {
-		w.Write(json.Message("Error", "Newborn is missing"))
-		return
-	}
-	fmt.Println(r.FormValue("category"))
+	log.Println(r.FormValue("category"))
 	category, err := strconv.ParseUint(r.FormValue("category"), 10, 64)
 	if err != nil {
 		w.Write(json.Message("Error", "Category is missing"))
@@ -97,9 +81,6 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 	}
 	ad := Ad{
 		Profile:     profile,
-		Baby:        baby,
-		Infant:      infant,
-		Newborn:     newborn,
 		Title:       title,
 		Category:    category,
 		Description: description,
@@ -107,6 +88,29 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 		Currency:    currency,
 		Report:      0,
 		Date:        time.Now(),
+	}
+	newborn1 := r.FormValue("newborn1") // Newborn image1
+	if newborn1 == "" {
+		w.Write(json.Message("Error", "At least one image should be uploaded"))
+	} else {
+		image1, err := api.GetEggBySize("newborn", newborn1)
+		if err == nil {
+			ad.Image1 = image1
+		}
+	}
+	newborn2 := r.FormValue("newborn2") // Newborn image2
+	if newborn2 != "" {
+		image2, err := api.GetEggBySize("newborn", newborn2)
+		if err == nil {
+			ad.Image2 = image2
+		}
+	}
+	newborn3 := r.FormValue("newborn3") // Newborn image3
+	if newborn3 != "" {
+		image3, err := api.GetEggBySize("newborn", newborn3)
+		if err == nil {
+			ad.Image3 = image3
+		}
 	}
 	err = ad.saveAd()
 	if err != nil {
@@ -120,34 +124,43 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 
 //********************** GET { **********************
 func getAdById(id string) (Ad, error) {
-	session, err := mgo.Dial("mongodb://admin:12345678@localhost:27017/sa")
-	check(err)
+	session, err := mgo.Dial(conf.Mongodb)
+	if err != nil {
+		log.Fatal("Unable to connect to DB ", err)
+	}
 	defer session.Close()
 
-	// Optional. Switch the session to a monotonic behavior.
-	session.SetMode(mgo.Monotonic, true)
-
+	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
 	result := Ad{}
 	c := session.DB("sa").C("ad")
 	err = c.FindId(bson.ObjectIdHex(id)).One(&result)
 	return result, err
 }
 
-// TODO: read it http://stackoverflow.com/questions/17998943/golang-library-package-that-returns-json-string-from-http-request
 /*
+size=infant(default)
 {
-	Status: "OK",
-	Message: {
-	Profile: 123412341134123,
-	Image: "12412341234",
-	Thumb: "asdfasfasdfaf",
-	Title: "test",
-	Category: 323,
-	Description: "dasfasdfas asdfadsf adsfadfadsfadsf qwerqwerqwer adfasdfdf",
-	Price: 1241234123,
-	Currency: "qwerqwer",
-	Report: 0,
-	Date: "2014-02-03T18:09:43.309+08:00"
+	status: "OK",
+	result: {
+	    profile: 123412341134123,
+	    title: "test",
+	    category: 323,
+	    description: "dasfasdfas asdfadsf adsfadfadsfadsf qwerqwerqwer adfasdfdf",
+	    price: 1241234123,
+	    currency: "qwerqwer",
+	    report: 0,
+	    date: "2014-02-03T18:09:43.309+08:00"
+   	    image1: [
+	        "newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
+	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
+	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
+	    ],
+   	    image2: [
+        	"newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
+	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
+	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
+	    ],
+   	    image3: [],
 	}
 }
 */
