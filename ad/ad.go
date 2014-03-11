@@ -10,8 +10,8 @@ import (
 	"labix.org/v2/mgo/bson"
 
 	"github.com/kamoljan/ikura/api"
-	"github.com/kamoljan/ikura/conf"
-	"github.com/kamoljan/nefeted/json"
+	"github.com/kamoljan/ikura/json"
+	"github.com/kamoljan/nefeted/conf"
 )
 
 type Ad struct {
@@ -23,9 +23,9 @@ type Ad struct {
 	Currency    string    `json:"currency"`
 	Report      uint64    `json:"report"`
 	Date        time.Time `json:"date"`
-	Image1      api.Egg   `json:"image1"`
-	Image2      api.Egg   `json:"image2"`
-	Image3      api.Egg   `json:"image3"`
+	Image1      json.Egg  `json:"image1"`
+	Image2      json.Egg  `json:"image2"`
+	Image3      json.Egg  `json:"image3"`
 }
 
 //********************** POST { **********************
@@ -50,33 +50,33 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 	// TODO: refactor it!
 	profile, err := strconv.ParseUint(r.FormValue("profile"), 10, 64)
 	if err != nil {
-		w.Write(json.Message("Error", "Profile is missing"))
+		w.Write(json.Message("ERROR", "Profile is missing"))
 		return
 	}
 	log.Println(r.FormValue("category"))
 	category, err := strconv.ParseUint(r.FormValue("category"), 10, 64)
 	if err != nil {
-		w.Write(json.Message("Error", "Category is missing"))
+		w.Write(json.Message("ERROR", "Category is missing"))
 		return
 	}
 	price, err := strconv.ParseUint(r.FormValue("price"), 10, 64)
 	if err != nil {
-		w.Write(json.Message("Error", "Price is missing"))
+		w.Write(json.Message("ERROR", "Price is missing"))
 		return
 	}
 	title := r.FormValue("title")
 	if title == "" {
-		w.Write(json.Message("Error", "Title is missing"))
+		w.Write(json.Message("ERROR", "Title is missing"))
 		return
 	}
 	description := r.FormValue("description")
 	if description == "" {
-		w.Write(json.Message("Error", "Description is missing"))
+		w.Write(json.Message("ERROR", "Description is missing"))
 		return
 	}
 	currency := r.FormValue("currency")
 	if currency == "" {
-		w.Write(json.Message("Error", "Currency is missing"))
+		w.Write(json.Message("ERROR", "Currency is missing"))
 		return
 	}
 	ad := Ad{
@@ -91,7 +91,7 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 	}
 	newborn1 := r.FormValue("newborn1") // Newborn image1
 	if newborn1 == "" {
-		w.Write(json.Message("Error", "At least one image should be uploaded"))
+		w.Write(json.Message("ERROR", "At least one image should be uploaded"))
 	} else {
 		image1, err := api.GetEggBySize("newborn", newborn1)
 		if err == nil {
