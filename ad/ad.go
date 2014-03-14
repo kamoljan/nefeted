@@ -178,25 +178,12 @@ func GetAd(w http.ResponseWriter, r *http.Request, id string) {
 	ads: [
         {
         	_id: "53202376058424b87c9d9368",
-    	    profile: 123412341134123,
-    	    title: "test",
-    	    category: 323,
-    	    description: "dasfasdfas asdfadsf adsfadfadsfadsf qwerqwerqwer adfasdfdf",
     	    price: 1241234123,
-    	    currency: "qwerqwer",
-    	    report: 0,
-    	    date: "2014-02-03T18:09:43.309+08:00"
        	    image1: [
     	        "newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
     	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
     	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
-    	    ],
-       	    image2: [
-            	"newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
-    	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
-    	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
-    	    ],
-       	    image3: [],
+    	    ]
         },
          ..
  	]
@@ -212,14 +199,10 @@ func GetSearch(w http.ResponseWriter, r *http.Request) {
 
 	db := session.DB("sa")
 	var result interface{}
-	// err = db.Run(bson.M{"text": "ad", "search": "hsjsjd"}, &result)
-	err = db.Run(bson.M{"text": "ad", "search": "hsjsjd", "limit": 1}, &result) //buggy one
-	// q := bson.M{"text": "ad", {"search": "hsjsjd", "limit": 1}}
-	// err = db.Run(bson.M{"text": "ad", {"search": "hsjsjd", "limit": 1}}, &result)
-	// err = db.Run(bson.M{"text": "ad", bson.DocElem{"search": "hsjsjd"}}, &result)
-	//q := bson.D{"text": "ad", "search": "hsjsjd"}
-	//err = db.Run(q, &result)
-
+	// err = db.Run(bson.M{"text": "ad", "search": "hsjsjd", "limit": 1}, &result) //buggy one
+	//db.ad.runCommand("text", { search: "hsjsjd", limit: 20, project: { "price" : 1, "image1": 1 }})
+	q := bson.D{{"text", "ad"}, {"search", "hsjsjd"}}
+	err = db.Run(q, &result) //FIXME: should be w/ `limit` and project
 	log.Printf("err = %s\n", err)
 
 	if err != nil {
