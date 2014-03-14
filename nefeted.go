@@ -28,6 +28,18 @@ func adHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func searchHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("r.Method = %s\n", r.Method)
+	fmt.Printf("r.URL = %s\n", r.URL)
+
+	if r.Method == "GET" {
+		ad.GetSearch(w, r)
+	} else {
+		http.NotFound(w, r)
+		return
+	}
+}
+
 func logHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		log.Println(req.URL)
@@ -37,6 +49,7 @@ func logHandler(h http.Handler) http.Handler {
 
 func main() {
 	http.HandleFunc("/ad/", adHandler)
+	http.HandleFunc("/search/", searchHandler)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", conf.NefetedPort), logHandler(http.DefaultServeMux))
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

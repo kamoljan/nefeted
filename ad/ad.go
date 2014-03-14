@@ -1,6 +1,7 @@
 package ad
 
 import (
+	// "fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -120,8 +121,6 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 	w.Write(json.Message("OK", "Saved!"))
 }
 
-//********************** } POST *********************
-
 //********************** GET { **********************
 func getAdById(id string) (Ad, error) {
 	session, err := mgo.Dial(conf.Mongodb)
@@ -173,4 +172,59 @@ func GetAd(w http.ResponseWriter, r *http.Request, id string) {
 	}
 }
 
-//********************** } GET **********************
+/*
+{
+	filtered: "66",
+	ads: [
+        {
+        	_id: "53202376058424b87c9d9368",
+    	    profile: 123412341134123,
+    	    title: "test",
+    	    category: 323,
+    	    description: "dasfasdfas asdfadsf adsfadfadsfadsf qwerqwerqwer adfasdfdf",
+    	    price: 1241234123,
+    	    currency: "qwerqwer",
+    	    report: 0,
+    	    date: "2014-02-03T18:09:43.309+08:00"
+       	    image1: [
+    	        "newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
+    	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
+    	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
+    	    ],
+       	    image2: [
+            	"newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
+    	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
+    	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
+    	    ],
+       	    image3: [],
+        },
+         ..
+ 	]
+}
+*/
+func GetSearch(w http.ResponseWriter, r *http.Request) {
+	session, err := mgo.Dial(conf.Mongodb)
+	if err != nil {
+		log.Fatal("Unable to connect to DB ", err)
+	}
+	defer session.Close()
+	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
+
+	db := session.DB("sa")
+	var result interface{}
+	// err = db.Run(bson.M{"text": "ad", "search": "hsjsjd"}, &result)
+	err = db.Run(bson.M{"text": "ad", "search": "hsjsjd", "limit": 1}, &result) //buggy one
+	// q := bson.M{"text": "ad", {"search": "hsjsjd", "limit": 1}}
+	// err = db.Run(bson.M{"text": "ad", {"search": "hsjsjd", "limit": 1}}, &result)
+	// err = db.Run(bson.M{"text": "ad", bson.DocElem{"search": "hsjsjd"}}, &result)
+	//q := bson.D{"text": "ad", "search": "hsjsjd"}
+	//err = db.Run(q, &result)
+
+	log.Printf("err = %s\n", err)
+
+	if err != nil {
+		w.Write(json.Message("ERROR", "Ads not found"))
+	} else {
+		w.Write(json.Message("OK", result))
+	}
+}
