@@ -16,17 +16,18 @@ import (
 )
 
 type Ad struct {
-	Profile     uint64    `json:"profile"` // Facebook profile ID
-	Title       string    `json:"title"`
-	Category    uint64    `json:"category"`
-	Description string    `json:"description"`
-	Price       uint64    `json:"price"`
-	Currency    string    `json:"currency"`
-	Report      uint64    `json:"report"`
-	Date        time.Time `json:"date"`
-	Image1      json.Egg  `json:"image1"`
-	Image2      json.Egg  `json:"image2"`
-	Image3      json.Egg  `json:"image3"`
+	Id          bson.ObjectId `json:"id"                bson:"_id"`
+	Profile     uint64        `json:"profile"           bson:"profile"`
+	Title       string        `json:"title"             bson:"title"`
+	Category    uint64        `json:"category"          bson:"category"`
+	Description string        `json:"description"       bson:"description"`
+	Price       uint64        `json:"price"             bson:"price"`
+	Currency    string        `json:"currency"          bson:"currency"`
+	Report      uint64        `json:"report,omitempty"  bson:"report,omitempty"`
+	Date        time.Time     `json:"date"              bson:"date"`
+	Image1      json.Egg      `json:"image1"            bson:"image1"`
+	Image2      json.Egg      `json:"image2,omitempty"  bson:"image2,omitempty"`
+	Image3      json.Egg      `json:"image3,omitempty"  bson:"image2,omitempty"`
 }
 
 //********************** POST { **********************
@@ -174,19 +175,35 @@ func GetAd(w http.ResponseWriter, r *http.Request, id string) {
 
 /*
 {
-	filtered: "66",
-	ads: [
-        {
-        	_id: "53202376058424b87c9d9368",
-    	    price: 1241234123,
-       	    image1: [
-    	        "newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
-    	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
-    	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
-    	    ]
-        },
-         ..
- 	]
+	status: "OK",
+	result: {
+	    language: "english",
+	    ok: 1,
+	    queryDebugString: "hsjsjd||||||",
+	    results: [
+	        {
+            	obj: {
+                	_id: "53202376058424b87c9d9368",
+                	image1: {
+                	    baby: "0001_68415c85528ccf9e763eb48d9dc0fca8a540f701_655B4C_400_300",
+                	    egg: "0001_c0448ef44bf7fd00476fadf11805d94fe94a5820_655B4C_816_612",
+                	    infant: "0001_9b0e36f28be91dae81a02863fadce2bc2f196312_655B4C_200_150",
+                	    newborn: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
+                    },
+            	    price: 6468
+                },
+            	score: 1.1
+            },
+	        ...
+        ],
+        stats: {
+        	n: 2,
+        	nfound: 2,
+        	nscanned: 3,
+        	nscannedObjects: 0,
+        	timeMicros: 69
+        }
+	}
 }
 */
 func GetSearch(w http.ResponseWriter, r *http.Request) {
@@ -196,15 +213,23 @@ func GetSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	defer session.Close()
 	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
-
 	db := session.DB("sa")
 	var result interface{}
-	// err = db.Run(bson.M{"text": "ad", "search": "hsjsjd", "limit": 1}, &result) //buggy one
 	//db.ad.runCommand("text", { search: "hsjsjd", limit: 20, project: { "price" : 1, "image1": 1 }})
-	q := bson.D{{"text", "ad"}, {"search", "hsjsjd"}}
-	err = db.Run(q, &result) //FIXME: should be w/ `limit` and project
+	// q := bson.D{{"text", "ad"}, {"search", "hsjsjd"}} // working one
+	q := bson.D{
+		{"text", "ad"},
+		{"search", "hsjsjd"},
+		{"limit", 2},
+		{"project",
+			bson.D{
+				{"price", 1},
+				{"image1", 1},
+			},
+		},
+	}
+	err = db.Run(q, &result)
 	log.Printf("err = %s\n", err)
-
 	if err != nil {
 		w.Write(json.Message("ERROR", "Ads not found"))
 	} else {
