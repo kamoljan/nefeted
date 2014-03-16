@@ -9,11 +9,6 @@ import (
 	"github.com/kamoljan/nefeted/conf"
 )
 
-const (
-	Mongodb     = "mongodb://admin:12345678@localhost:27017/sa"
-	NefetedPort = 8080
-)
-
 func adHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("r.Method = %s\n", r.Method)
 	fmt.Printf("r.URL = %s\n", r.URL)
@@ -32,8 +27,20 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("r.Method = %s\n", r.Method)
 	fmt.Printf("r.URL = %s\n", r.URL)
 
-	if r.Method == "GET" {
-		ad.GetSearch(w, r)
+	if r.Method == "POST" {
+		ad.Search(w, r)
+	} else {
+		http.NotFound(w, r)
+		return
+	}
+}
+
+func listHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("r.Method = %s\n", r.Method)
+	fmt.Printf("r.URL = %s\n", r.URL)
+
+	if r.Method == "POST" {
+		ad.List(w, r)
 	} else {
 		http.NotFound(w, r)
 		return
@@ -49,7 +56,8 @@ func logHandler(h http.Handler) http.Handler {
 
 func main() {
 	http.HandleFunc("/ad/", adHandler)
-	http.HandleFunc("/search/", searchHandler)
+	http.HandleFunc("/search", searchHandler)
+	http.HandleFunc("/list", listHandler)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", conf.NefetedPort), logHandler(http.DefaultServeMux))
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

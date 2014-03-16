@@ -1,7 +1,7 @@
 package ad
 
 import (
-	// "fmt"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -16,18 +16,26 @@ import (
 )
 
 type Ad struct {
-	Id          bson.ObjectId `json:"id"                bson:"_id"`
-	Profile     uint64        `json:"profile"           bson:"profile"`
-	Title       string        `json:"title"             bson:"title"`
-	Category    uint64        `json:"category"          bson:"category"`
-	Description string        `json:"description"       bson:"description"`
-	Price       uint64        `json:"price"             bson:"price"`
-	Currency    string        `json:"currency"          bson:"currency"`
-	Report      uint64        `json:"report,omitempty"  bson:"report,omitempty"`
-	Date        time.Time     `json:"date"              bson:"date"`
-	Image1      json.Egg      `json:"image1"            bson:"image1"`
-	Image2      json.Egg      `json:"image2,omitempty"  bson:"image2,omitempty"`
-	Image3      json.Egg      `json:"image3,omitempty"  bson:"image2,omitempty"`
+	// Id          bson.ObjectId `json:"id"                bson:"_id"`
+	Profile     uint64    `json:"profile"           bson:"profile"`
+	Title       string    `json:"title"             bson:"title"`
+	Category    uint64    `json:"category"          bson:"category"`
+	Description string    `json:"description"       bson:"description"`
+	Price       uint64    `json:"price"             bson:"price"`
+	Currency    string    `json:"currency"          bson:"currency"`
+	Report      uint64    `json:"report,omitempty"  bson:"report,omitempty"`
+	Date        time.Time `json:"date"              bson:"date"`
+	Image1      json.Egg  `json:"image1"            bson:"image1"`
+	Image2      json.Egg  `json:"image2,omitempty"  bson:"image2,omitempty"`
+	Image3      json.Egg  `json:"image3,omitempty"  bson:"image3,omitempty"`
+}
+
+type AdList struct {
+	Id       bson.ObjectId `json:"id"                bson:"_id"`
+	Title    string        `json:"title"             bson:"title"`
+	Price    uint64        `json:"price"             bson:"price"`
+	Currency string        `json:"currency"          bson:"currency"`
+	Image1   json.Egg      `json:"image1"            bson:"image1"`
 }
 
 //********************** POST { **********************
@@ -47,7 +55,11 @@ func (ad *Ad) saveAd() error {
 	return err
 }
 
-// newborn1, newborn2, newborn3 ...
+/*
+POST: http://localhost:8080/ad/
+      profile=123412341134123&category=323&price=1241234123&title=test&description=adfasdfdf&currency=qwerqwer&\
+      newborn1=0001_66f8b0fd119d9189a020cbe7ca604f9c3ee18499_CD262C_400_711
+*/
 func PostAd(w http.ResponseWriter, r *http.Request) {
 	// TODO: refactor it!
 	profile, err := strconv.ParseUint(r.FormValue("profile"), 10, 64)
@@ -81,6 +93,7 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 		w.Write(json.Message("ERROR", "Currency is missing"))
 		return
 	}
+
 	ad := Ad{
 		Profile:     profile,
 		Title:       title,
@@ -138,7 +151,7 @@ func getAdById(id string) (Ad, error) {
 }
 
 /*
-size=infant(default)
+GET: http://localhost:8080/ad/5322ee3d2f6ee98d1df6831c
 {
 	status: "OK",
 	result: {
@@ -174,6 +187,7 @@ func GetAd(w http.ResponseWriter, r *http.Request, id string) {
 }
 
 /*
+POST: http://localhost:8080/search
 {
 	status: "OK",
 	result: {
@@ -206,7 +220,14 @@ func GetAd(w http.ResponseWriter, r *http.Request, id string) {
 	}
 }
 */
-func GetSearch(w http.ResponseWriter, r *http.Request) {
+func Search(w http.ResponseWriter, r *http.Request) {
+	q := r.FormValue("q")
+	fmt.Printf("q = %s\n", q)
+	limit, err := strconv.Atoi(r.FormValue("limit"))
+	if err != nil {
+		limit = conf.ResultLimit
+	}
+	fmt.Printf("limit = %s\n", limit)
 	session, err := mgo.Dial(conf.Mongodb)
 	if err != nil {
 		log.Fatal("Unable to connect to DB ", err)
@@ -216,23 +237,71 @@ func GetSearch(w http.ResponseWriter, r *http.Request) {
 	db := session.DB("sa")
 	var result interface{}
 	//db.ad.runCommand("text", { search: "hsjsjd", limit: 20, project: { "price" : 1, "image1": 1 }})
-	// q := bson.D{{"text", "ad"}, {"search", "hsjsjd"}} // working one
-	q := bson.D{
-		{"text", "ad"},
-		{"search", "hsjsjd"},
-		{"limit", 2},
-		{"project",
-			bson.D{
-				{"price", 1},
-				{"image1", 1},
+	if q != "" {
+		sql := bson.D{
+			{"text", "ad"},
+			{"search", q},
+			{"limit", limit},
+			{"project",
+				bson.D{
+					{"price", 1},
+					{"image1", 1},
+				},
 			},
-		},
+		}
+		err = db.Run(sql, &result)
 	}
-	err = db.Run(q, &result)
-	log.Printf("err = %s\n", err)
 	if err != nil {
 		w.Write(json.Message("ERROR", "Ads not found"))
 	} else {
 		w.Write(json.Message("OK", result))
 	}
+
+	log.Printf("err = %s\n", err)
+}
+
+/*
+POST: http://localhost:8080/list
+{
+	status: "OK"
+	result: [
+	    0:{
+	        title: "test"
+	        price: 6468
+	        image1: {
+	            egg: "0001_c0448ef44bf7fd00476fadf11805d94fe94a5820_655B4C_816_612"
+    	        baby: "0001_68415c85528ccf9e763eb48d9dc0fca8a540f701_655B4C_400_300"
+    	        infant: "0001_9b0e36f28be91dae81a02863fadce2bc2f196312_655B4C_200_150"
+    	        newborn: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
+	        }
+	    ...
+    ]
+}
+*/
+func List(w http.ResponseWriter, r *http.Request) { //TODO: remove useless field from Ad
+	limit, err := strconv.Atoi(r.FormValue("limit"))
+	if err != nil {
+		limit = conf.ResultLimit
+	}
+	session, err := mgo.Dial(conf.Mongodb)
+	if err != nil {
+		log.Fatal("Unable to connect to DB ", err)
+	}
+	defer session.Close()
+	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
+	db := session.DB("sa")
+	var result interface{}
+	var adList []AdList
+	var ad AdList
+	iter := db.C("ad").Find(nil).Limit(limit).Iter()
+	for iter.Next(&ad) {
+		adList = append(adList, ad)
+	}
+	result = adList
+	if err != nil {
+		w.Write(json.Message("ERROR", "Ads not found"))
+	} else {
+		w.Write(json.Message("OK", result))
+	}
+	log.Printf("err = %s\n", err)
 }
