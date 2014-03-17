@@ -35,7 +35,8 @@ type AdList struct {
 	Title    string        `json:"title"             bson:"title"`
 	Price    uint64        `json:"price"             bson:"price"`
 	Currency string        `json:"currency"          bson:"currency"`
-	Image1   json.Egg      `json:"image1"            bson:"image1"`
+	Image1   json.Egg      `json:"-"                 bson:"image1"`
+	Image    string        `json:"image"             bson:"image"`
 }
 
 //********************** POST { **********************
@@ -261,24 +262,20 @@ func Search(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-POST: http://localhost:8080/list
+POST: http://localhost:8080/list?limit=20\
+	  &image1=newborn // TODO: make it dynamic
 {
 	status: "OK"
 	result: [
 	    0:{
 	        title: "test"
 	        price: 6468
-	        image1: {
-	            egg: "0001_c0448ef44bf7fd00476fadf11805d94fe94a5820_655B4C_816_612"
-    	        baby: "0001_68415c85528ccf9e763eb48d9dc0fca8a540f701_655B4C_400_300"
-    	        infant: "0001_9b0e36f28be91dae81a02863fadce2bc2f196312_655B4C_200_150"
-    	        newborn: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
-	        }
+	        image: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
 	    ...
     ]
 }
 */
-func List(w http.ResponseWriter, r *http.Request) { //TODO: remove useless field from Ad
+func List(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.FormValue("limit"))
 	if err != nil {
 		limit = conf.ResultLimit
@@ -295,6 +292,7 @@ func List(w http.ResponseWriter, r *http.Request) { //TODO: remove useless field
 	var ad AdList
 	iter := db.C("ad").Find(nil).Limit(limit).Iter()
 	for iter.Next(&ad) {
+		ad.Image = ad.Image1.Newborn // TODO: make it dynamic
 		adList = append(adList, ad)
 	}
 	result = adList
