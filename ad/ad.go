@@ -270,6 +270,7 @@ POST: http://localhost:8080/list?limit=20\
 	    0:{
 	        title: "test"
 	        price: 6468
+	        currency: "SGD"
 	        image: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
 	    ...
     ]
