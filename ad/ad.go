@@ -280,6 +280,7 @@ func List(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		limit = conf.ResultLimit
 	}
+	fmt.Printf("limit = %s\n", limit)
 	session, err := mgo.Dial(conf.Mongodb)
 	if err != nil {
 		log.Fatal("Unable to connect to DB ", err)
@@ -292,14 +293,18 @@ func List(w http.ResponseWriter, r *http.Request) {
 	var ad AdList
 	iter := db.C("ad").Find(nil).Limit(limit).Iter()
 	for iter.Next(&ad) {
-		ad.Image = ad.Image1.Newborn // TODO: make it dynamic
+		ad.Image = ad.Image1.Baby // TODO: make it dynamic
 		adList = append(adList, ad)
 	}
 	result = adList
 	if err != nil {
 		w.Write(json.Message("ERROR", "Ads not found"))
 	} else {
-		w.Write(json.Message("OK", result))
+		if ad.Image != "" {
+			w.Write(json.Message3("OK", result, "Ads found"))
+		} else {
+			w.Write(json.Message3("ERROR", nil, "Ads not found"))
+		}
 	}
 	log.Printf("err = %s\n", err)
 }
