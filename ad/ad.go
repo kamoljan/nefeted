@@ -272,6 +272,7 @@ POST: http://localhost:8080/list?limit=20\
 	        price: 6468
 	        currency: "SGD"
 	        image: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
+	      }
 	    ...
     ]
 }
@@ -292,7 +293,7 @@ func List(w http.ResponseWriter, r *http.Request) {
 	var result interface{}
 	var adList []AdList
 	var ad AdList
-	iter := db.C("ad").Find(nil).Limit(limit).Iter()
+	iter := db.C("ad").Find(nil).Limit(limit).Sort("-_id").Iter()
 	for iter.Next(&ad) {
 		ad.Image = ad.Image1.Baby // TODO: make it dynamic
 		adList = append(adList, ad)
