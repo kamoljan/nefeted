@@ -39,6 +39,23 @@ type AdList struct {
 	Image    string        `json:"image"             bson:"image"`
 }
 
+type AdView struct {
+	Profile     uint64    `json:"profile"           bson:"profile"`
+	Title       string    `json:"title"             bson:"title"`
+	Category    uint64    `json:"category"          bson:"category"`
+	Description string    `json:"description"       bson:"description"`
+	Price       uint64    `json:"price"             bson:"price"`
+	Currency    string    `json:"currency"          bson:"currency"`
+	Report      uint64    `json:"report,omitempty"  bson:"report,omitempty"`
+	Date        time.Time `json:"date"              bson:"date"`
+	Image1      json.Egg  `json:"_"            bson:"image1"`
+	Image2      json.Egg  `json:"_,omitempty"  bson:"image2,omitempty"`
+	Image3      json.Egg  `json:"_,omitempty"  bson:"image3,omitempty"`
+	Img1        string    `json:"img1"            bson:"img1"`
+	Img2        string    `json:"img2,omitempty"  bson:"img2,omitempty"`
+	Img3        string    `json:"img3,omitempty"  bson:"img3,omitempty"`
+}
+
 //********************** POST { **********************
 func (ad *Ad) saveAd() error {
 	session, err := mgo.Dial(conf.Mongodb)
@@ -137,7 +154,7 @@ func PostAd(w http.ResponseWriter, r *http.Request) {
 }
 
 //********************** GET { **********************
-func getAdById(id string) (Ad, error) {
+func getAdById(id string) (AdView, error) {
 	session, err := mgo.Dial(conf.Mongodb)
 	if err != nil {
 		log.Fatal("Unable to connect to DB ", err)
@@ -145,14 +162,20 @@ func getAdById(id string) (Ad, error) {
 	defer session.Close()
 
 	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
-	result := Ad{}
+	var adView AdView
 	c := session.DB("sa").C("ad")
-	err = c.FindId(bson.ObjectIdHex(id)).One(&result)
-	return result, err
+	err = c.FindId(bson.ObjectIdHex(id)).One(&adView)
+	if err != nil {
+		log.Printf("err = %s\n", err)
+	}
+	adView.Img1 = adView.Image1.Baby
+	adView.Img2 = adView.Image2.Baby
+	adView.Img3 = adView.Image3.Baby
+	return adView, err
 }
 
 /*
-GET: http://localhost:8080/ad/5322ee3d2f6ee98d1df6831c
+GET: http://localhost:8080/ad/5322ee3d2f6ee98d1df6831c&eggtype=baby
 {
 	status: "OK",
 	result: {
@@ -164,17 +187,9 @@ GET: http://localhost:8080/ad/5322ee3d2f6ee98d1df6831c
 	    currency: "qwerqwer",
 	    report: 0,
 	    date: "2014-02-03T18:09:43.309+08:00"
-   	    image1: [
-	        "newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
-	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
-	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
-	    ],
-   	    image2: [
-        	"newborn" : "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
-	        "infant" : "0001_ff41e42b0134e219bc09eddda87687822460afcf_ACA0AC_200_319"
-	        "baby" : "0001_6881db255b21c864c9d1e28db50dc3b71dab5b78_ACA0AC_400_637"
-	    ],
-   	    image3: [],
+	    image1: = "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
+	    image2: = "0001_040db0bc2fc49ab41fd81294c7d195c7d1de358b_ACA0AC_100_160"
+	    image3: = ""
 	}
 }
 */
