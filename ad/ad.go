@@ -40,20 +40,20 @@ type AdList struct {
 }
 
 type AdView struct {
-	Profile     uint64    `json:"profile"           bson:"profile"`
-	Title       string    `json:"title"             bson:"title"`
-	Category    uint64    `json:"category"          bson:"category"`
-	Description string    `json:"description"       bson:"description"`
-	Price       uint64    `json:"price"             bson:"price"`
-	Currency    string    `json:"currency"          bson:"currency"`
-	Report      uint64    `json:"report,omitempty"  bson:"report,omitempty"`
-	Date        time.Time `json:"date"              bson:"date"`
-	Image1      json.Egg  `json:"_"            bson:"image1"`
-	Image2      json.Egg  `json:"_,omitempty"  bson:"image2,omitempty"`
-	Image3      json.Egg  `json:"_,omitempty"  bson:"image3,omitempty"`
-	Img1        string    `json:"img1"            bson:"img1"`
-	Img2        string    `json:"img2,omitempty"  bson:"img2,omitempty"`
-	Img3        string    `json:"img3,omitempty"  bson:"img3,omitempty"`
+	Profile     uint64    `json:"profile"             bson:"profile"`
+	Title       string    `json:"title"               bson:"title"`
+	Category    uint64    `json:"category"            bson:"category"`
+	Description string    `json:"description"         bson:"description"`
+	Price       uint64    `json:"price"               bson:"price"`
+	Currency    string    `json:"currency"            bson:"currency"`
+	Report      uint64    `json:"report,omitempty"    bson:"report,omitempty"`
+	Date        time.Time `json:"date"                bson:"date"`
+	Image1      json.Egg  `json:"_"                   bson:"image1"`
+	Image2      json.Egg  `json:"_,omitempty"         bson:"image2,omitempty"`
+	Image3      json.Egg  `json:"_,omitempty"         bson:"image3,omitempty"`
+	Img1        string    `json:"image1"              bson:"img1"`
+	Img2        string    `json:"image2"              bson:"img2"`
+	Img3        string    `json:"image3"              bson:"img3"`
 }
 
 //********************** POST { **********************
