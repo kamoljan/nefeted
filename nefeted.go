@@ -47,10 +47,22 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func listingHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("r.Method = %s\n", r.Method)
+	fmt.Printf("r.URL = %s\n", r.URL)
+
+	if r.Method == "GET" {
+		ad.Listing(w, r)
+	} else {
+		http.NotFound(w, r)
+		return
+	}
+}
+
 func logHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		log.Println(req.URL)
-		h.ServeHTTP(rw, req)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.URL)
+		h.ServeHTTP(w, r)
 	})
 }
 
@@ -58,6 +70,7 @@ func main() {
 	http.HandleFunc("/ad/", adHandler)
 	http.HandleFunc("/search", searchHandler)
 	http.HandleFunc("/list", listHandler)
+	http.HandleFunc("/listing/", listingHandler) // More RESTFul API
 	err := http.ListenAndServe(fmt.Sprintf(":%d", conf.NefetedPort), logHandler(http.DefaultServeMux))
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

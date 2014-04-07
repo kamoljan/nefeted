@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"labix.org/v2/mgo"
@@ -277,8 +278,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-POST: http://localhost:8080/list?limit=20\
-	  &image1=newborn // TODO: make it dynamic
+POST: http://localhost:8080/list?limit=20&image1=newborn // TODO: make it dynamic
 {
 	status: "OK"
 	result: [
@@ -309,6 +309,86 @@ func List(w http.ResponseWriter, r *http.Request) {
 	var adList []AdList
 	var ad AdList
 	iter := db.C("ad").Find(nil).Limit(limit).Sort("-_id").Iter()
+	for iter.Next(&ad) {
+		ad.Image = ad.Image1.Baby // TODO: make it dynamic
+		adList = append(adList, ad)
+	}
+	result = adList
+	if err != nil {
+		w.Write(json.Message("ERROR", "Ads not found"))
+	} else {
+		if ad.Image != "" {
+			w.Write(json.Message3("OK", result, "Ads found"))
+		} else {
+			w.Write(json.Message3("ERROR", nil, "Ads not found"))
+		}
+	}
+	log.Printf("err = %s\n", err)
+}
+
+/*
+GET: http://localhost:8080/listinig/category/limit/sort // TODO: make it dynamic
+{
+	status: "OK"
+	result: [
+	    0:{
+	        title: "test"
+	        price: 6468
+	        currency: "SGD"
+	        image: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
+	      }
+	    ...
+    ]
+}
+*/
+func Listing(w http.ResponseWriter, r *http.Request) {
+	var category, limit, sort string
+	sort = "-_id"
+	s := strings.Split(r.URL.Path, "/")
+	if len(s) >= 4 {
+		category, limit, sort = s[2], s[3], s[4] //TODO: it should work even Path is not enough
+	} else {
+		w.Write(json.Message3("ERROR", nil, "Wrong URL"))
+		return
+	}
+	c, err := strconv.Atoi(category)
+	var cat bson.M
+	if err != nil {
+		cat = bson.M{"category": "{ $ne: -1 }"}
+	} else {
+		cat = bson.M{"category": c}
+	}
+
+	lim, err := strconv.Atoi(limit)
+	if err != nil {
+		lim = conf.ResultLimit
+	}
+
+	if sort != "date" {
+		if sort != "price" {
+			w.Write(json.Message3("ERROR", nil, "Wrong URL"))
+			return
+		}
+	} else {
+		sort = "-_id"
+	}
+
+	session, err := mgo.Dial(conf.Mongodb)
+	if err != nil {
+		log.Fatal("Unable to connect to DB ", err)
+	}
+	defer session.Close()
+	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
+	db := session.DB("sa")
+	var result interface{}
+	var adList []AdList
+	var ad AdList
+
+	// fmt.Printf("cat = %s\n", cat)
+	// fmt.Printf("lim = %s\n", lim)
+	// fmt.Printf("sort = %s\n", sort)
+
+	iter := db.C("ad").Find(cat).Limit(lim).Sort(sort).Iter()
 	for iter.Next(&ad) {
 		ad.Image = ad.Image1.Baby // TODO: make it dynamic
 		adList = append(adList, ad)
