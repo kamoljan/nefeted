@@ -330,7 +330,7 @@ func List(w http.ResponseWriter, r *http.Request) {
 GET: http://localhost:8080/listinig/category/limit/sort // TODO: make it dynamic
 {
 	status: "OK"
-	result: [
+	data: [
 	    0:{
 	        title: "test"
 	        price: 6468
@@ -380,7 +380,7 @@ func Listing(w http.ResponseWriter, r *http.Request) {
 	defer session.Close()
 	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
 	db := session.DB("sa")
-	var result interface{}
+	var data interface{}
 	var adList []AdList
 	var ad AdList
 
@@ -393,12 +393,12 @@ func Listing(w http.ResponseWriter, r *http.Request) {
 		ad.Image = ad.Image1.Baby // TODO: make it dynamic
 		adList = append(adList, ad)
 	}
-	result = adList
+	data = adList
 	if err != nil {
 		w.Write(json.Message("ERROR", "Ads not found"))
 	} else {
 		if ad.Image != "" {
-			w.Write(json.Message3("OK", result, "Ads found"))
+			w.Write(json.Message3("OK", data, "Ads found"))
 		} else {
 			w.Write(json.Message3("ERROR", nil, "Ads not found"))
 		}
