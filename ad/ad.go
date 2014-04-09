@@ -396,6 +396,7 @@ func Listing(w http.ResponseWriter, r *http.Request) {
 		imgName := strings.Split(ad.Image, "_")
 		ad.Width = imgName[3]
 		ad.Height = imgName[4]
+		ad.Image = conf.IkuraUrl + ad.Image
 		adList = append(adList, ad)
 	}
 	data = adList
