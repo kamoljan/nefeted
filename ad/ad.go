@@ -37,7 +37,9 @@ type AdList struct {
 	Price    uint64        `json:"price"             bson:"price"`
 	Currency string        `json:"currency"          bson:"currency"`
 	Image1   json.Egg      `json:"-"                 bson:"image1"`
-	Image    string        `json:"image"             bson:"image"`
+	Image    string        `json:"link"              bson:"image"`
+	Width    string        `json:"width"             bson:"-"`
+	Height   string        `json:"height"            bson:"-"`
 }
 
 type AdView struct {
@@ -391,6 +393,9 @@ func Listing(w http.ResponseWriter, r *http.Request) {
 	iter := db.C("ad").Find(cat).Limit(lim).Sort(sort).Iter()
 	for iter.Next(&ad) {
 		ad.Image = ad.Image1.Baby // TODO: make it dynamic
+		imgName := strings.Split(ad.Image, "_")
+		ad.Width = imgName[3]
+		ad.Height = imgName[4]
 		adList = append(adList, ad)
 	}
 	data = adList
