@@ -355,7 +355,7 @@ func Listing(w http.ResponseWriter, r *http.Request) {
 	}
 	c, err := strconv.Atoi(category)
 	var cat bson.M
-	if err != nil {
+	if err != nil || c == 0 {
 		cat = nil // if not number, then consider All categories
 	} else {
 		cat = bson.M{"category": c}
