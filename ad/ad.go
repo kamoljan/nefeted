@@ -411,3 +411,75 @@ func Listing(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("err = %s\n", err)
 }
+
+/*
+GET: http://localhost:8080/myads/profile // TODO: make it dynamic
+{
+	status: "OK"
+	data: [
+	    0:{
+	        title: "test"
+	        price: 6468
+	        currency: "SGD"
+	        image: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
+	      }
+	    ...
+    ]
+}
+*/
+func Myads(w http.ResponseWriter, r *http.Request) {
+	var profile string
+	lim, sort := conf.ResultLimit, "-_id" // TODO: do not hardcode
+	params := strings.Split(r.URL.Path, "/")
+	if len(params) >= 2 {
+		profile = params[2] //TODO: it should work even Path is not enough
+	} else {
+		w.Write(json.Message3("ERROR", nil, "Wrong URL"))
+		return
+	}
+
+	p, err := strconv.Atoi(profile)
+	var prof bson.M
+	if err != nil {
+		w.Write(json.Message3("ERROR", nil, "Please, provide profile id"))
+		return
+	} else {
+		prof = bson.M{"profile": p}
+	}
+
+	session, err := mgo.Dial(conf.Mongodb)
+	if err != nil {
+		log.Fatal("Unable to connect to DB ", err)
+	}
+	defer session.Close()
+	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
+	db := session.DB("sa")
+	var data interface{}
+	var adList []AdList
+	var ad AdList
+
+	//fmt.Printf("prof = %s\n", prof)
+	//fmt.Printf("lim = %s\n", lim)
+	//fmt.Printf("sort = %s\n", sort)
+
+	iter := db.C("ad").Find(prof).Limit(lim).Sort(sort).Iter()
+	for iter.Next(&ad) {
+		ad.Image = ad.Image1.Baby // TODO: make it dynamic
+		imgName := strings.Split(ad.Image, "_")
+		ad.Width = imgName[3]
+		ad.Height = imgName[4]
+		ad.Image = conf.IkuraUrl + ad.Image
+		adList = append(adList, ad)
+	}
+	data = adList
+	if err != nil {
+		w.Write(json.Message("ERROR", "Ads not found"))
+	} else {
+		if ad.Image != "" {
+			w.Write(json.Message3("OK", data, "Ads found"))
+		} else {
+			w.Write(json.Message3("ERROR", nil, "Ads not found"))
+		}
+	}
+	log.Printf("err = %s\n", err)
+}
