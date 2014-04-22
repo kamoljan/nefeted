@@ -17,7 +17,6 @@ import (
 )
 
 type Ad struct {
-	// Id          bson.ObjectId `json:"id"                bson:"_id"`
 	Profile     uint64    `json:"profile"           bson:"profile"`
 	Title       string    `json:"title"             bson:"title"`
 	Category    uint64    `json:"category"          bson:"category"`
@@ -337,10 +336,6 @@ func Listing(w http.ResponseWriter, r *http.Request) {
 	var adList []AdList
 	var ad AdList
 
-	// fmt.Printf("cat = %s\n", cat)
-	// fmt.Printf("lim = %s\n", lim)
-	// fmt.Printf("sort = %s\n", sort)
-
 	iter := db.C("ad").Find(cat).Limit(lim).Sort(sort).Iter()
 	for iter.Next(&ad) {
 		ad.Image = ad.Image1.Baby // TODO: make it dynamic
@@ -409,10 +404,6 @@ func Myads(w http.ResponseWriter, r *http.Request) {
 	var adList []AdList
 	var ad AdList
 
-	//fmt.Printf("prof = %s\n", prof)
-	//fmt.Printf("lim = %s\n", lim)
-	//fmt.Printf("sort = %s\n", sort)
-
 	iter := db.C("ad").Find(prof).Limit(lim).Sort(sort).Iter()
 	for iter.Next(&ad) {
 		ad.Image = ad.Image1.Baby // TODO: make it dynamic
@@ -439,15 +430,7 @@ func Myads(w http.ResponseWriter, r *http.Request) {
 PUT: http://localhost:8080/chat/{ad}/{profile}
 {
 	status: "OK"
-	data: [
-	    0:{
-	        title: "test"
-	        price: 6468
-	        currency: "SGD"
-	        image: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
-	      }
-	    ...
-    ]
+    "data":"PUTed"
 }
 */
 func Chat(w http.ResponseWriter, r *http.Request) {
@@ -459,9 +442,6 @@ func Chat(w http.ResponseWriter, r *http.Request) {
 		w.Write(json.Message3("ERROR", nil, "Wrong URL"))
 		return
 	}
-	// fmt.Printf("ad = %s\n", ad)
-	// fmt.Printf("profile = %s\n", profile)
-
 	session, err := mgo.Dial(conf.Mongodb)
 	if err != nil {
 		log.Fatal("Unable to connect to DB ", err)
@@ -479,3 +459,5 @@ func Chat(w http.ResponseWriter, r *http.Request) {
 		w.Write(json.Message("OK", "PUTed"))
 	}
 }
+
+//fmt.Printf("prof = %s\n", prof)
