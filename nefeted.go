@@ -35,18 +35,6 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func listHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("r.Method = %s\n", r.Method)
-	fmt.Printf("r.URL = %s\n", r.URL)
-
-	if r.Method == "POST" {
-		ad.List(w, r)
-	} else {
-		http.NotFound(w, r)
-		return
-	}
-}
-
 func listingHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("r.Method = %s\n", r.Method)
 	fmt.Printf("r.URL = %s\n", r.URL)
@@ -71,6 +59,18 @@ func myadsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func chatHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("r.Method = %s\n", r.Method)
+	fmt.Printf("r.URL = %s\n", r.URL)
+
+	if r.Method == "PUT" {
+		ad.Chat(w, r)
+	} else {
+		http.NotFound(w, r)
+		return
+	}
+}
+
 func logHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.URL)
@@ -81,9 +81,9 @@ func logHandler(h http.Handler) http.Handler {
 func main() {
 	http.HandleFunc("/ad/", adHandler)
 	http.HandleFunc("/search", searchHandler)
-	http.HandleFunc("/list", listHandler)
-	http.HandleFunc("/listing/", listingHandler) // More RESTFul API
+	http.HandleFunc("/listing/", listingHandler)
 	http.HandleFunc("/myads/", myadsHandler)
+	http.HandleFunc("/chat/", chatHandler)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", conf.NefetedPort), logHandler(http.DefaultServeMux))
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

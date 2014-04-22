@@ -280,56 +280,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-POST: http://localhost:8080/list?limit=20&image1=newborn // TODO: make it dynamic
-{
-	status: "OK"
-	result: [
-	    0:{
-	        title: "test"
-	        price: 6468
-	        currency: "SGD"
-	        image: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
-	      }
-	    ...
-    ]
-}
-*/
-func List(w http.ResponseWriter, r *http.Request) {
-	limit, err := strconv.Atoi(r.FormValue("limit"))
-	if err != nil {
-		limit = conf.ResultLimit
-	}
-	fmt.Printf("limit = %s\n", limit)
-	session, err := mgo.Dial(conf.Mongodb)
-	if err != nil {
-		log.Fatal("Unable to connect to DB ", err)
-	}
-	defer session.Close()
-	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
-	db := session.DB("sa")
-	var result interface{}
-	var adList []AdList
-	var ad AdList
-	iter := db.C("ad").Find(nil).Limit(limit).Sort("-_id").Iter()
-	for iter.Next(&ad) {
-		ad.Image = ad.Image1.Baby // TODO: make it dynamic
-		adList = append(adList, ad)
-	}
-	result = adList
-	if err != nil {
-		w.Write(json.Message("ERROR", "Ads not found"))
-	} else {
-		if ad.Image != "" {
-			w.Write(json.Message3("OK", result, "Ads found"))
-		} else {
-			w.Write(json.Message3("ERROR", nil, "Ads not found"))
-		}
-	}
-	log.Printf("err = %s\n", err)
-}
-
-/*
-GET: http://localhost:8080/listinig/category/limit/sort // TODO: make it dynamic
+GET: http://localhost:8080/listinig/category/limit/sort
 {
 	status: "OK"
 	data: [
@@ -482,4 +433,49 @@ func Myads(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Printf("err = %s\n", err)
+}
+
+/*
+PUT: http://localhost:8080/chat/{ad}/{profile}
+{
+	status: "OK"
+	data: [
+	    0:{
+	        title: "test"
+	        price: 6468
+	        currency: "SGD"
+	        image: "0001_72a53f664db6f415e9e862c607d9c0ba177c20af_655B4C_100_75"
+	      }
+	    ...
+    ]
+}
+*/
+func Chat(w http.ResponseWriter, r *http.Request) {
+	var ad, profile string
+	s := strings.Split(r.URL.Path, "/")
+	if len(s) >= 4 {
+		ad, profile = s[2], s[3]
+	} else {
+		w.Write(json.Message3("ERROR", nil, "Wrong URL"))
+		return
+	}
+	// fmt.Printf("ad = %s\n", ad)
+	// fmt.Printf("profile = %s\n", profile)
+
+	session, err := mgo.Dial(conf.Mongodb)
+	if err != nil {
+		log.Fatal("Unable to connect to DB ", err)
+	}
+	defer session.Close()
+
+	session.SetMode(mgo.Monotonic, true) // Optional. Switch the session to a monotonic behavior.
+	db := session.DB("sa")
+
+	err = db.C("ad").Update(bson.M{"_id": bson.ObjectIdHex(ad)}, bson.M{"$addToSet": bson.M{"chat": profile}})
+	if err != nil {
+		w.Write(json.Message("ERROR", "Could not PUT"))
+		log.Printf("err = %s\n", err)
+	} else {
+		w.Write(json.Message("OK", "PUTed"))
+	}
 }
