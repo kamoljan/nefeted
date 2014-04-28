@@ -39,6 +39,7 @@ type AdList struct {
 	Image    string        `json:"link"              bson:"image"`
 	Width    string        `json:"width"             bson:"-"`
 	Height   string        `json:"height"            bson:"-"`
+	Chat     []string      `json:"chat"              bson:"chat"`
 }
 
 type AdView struct {
