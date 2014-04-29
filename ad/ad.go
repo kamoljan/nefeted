@@ -31,16 +31,16 @@ type Ad struct {
 }
 
 type AdList struct {
-	Id       bson.ObjectId `json:"id"                bson:"_id"`
-	Profile  uint64        `json:"profile"           bson:"profile"`
-	Title    string        `json:"title"             bson:"title"`
-	Price    uint64        `json:"price"             bson:"price"`
-	Currency string        `json:"currency"          bson:"currency"`
-	Image1   json.Egg      `json:"-"                 bson:"image1"`
-	Image    string        `json:"link"              bson:"image"`
-	Width    string        `json:"width"             bson:"-"`
-	Height   string        `json:"height"            bson:"-"`
-	Chat     []string      `json:"chat"              bson:"chat"`
+	Id bson.ObjectId `json:"id"                bson:"_id"`
+	// Profile  uint64        `json:"profile"           bson:"profile"`
+	Title    string   `json:"title"             bson:"title"`
+	Price    uint64   `json:"price"             bson:"price"`
+	Currency string   `json:"currency"          bson:"currency"`
+	Image1   json.Egg `json:"-"                 bson:"image1"`
+	Image    string   `json:"link"              bson:"image"`
+	Width    string   `json:"width"             bson:"-"`
+	Height   string   `json:"height"            bson:"-"`
+	Chat     []string `json:"chat"              bson:"chat"`
 }
 
 type AdView struct {
