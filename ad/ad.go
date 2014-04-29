@@ -32,6 +32,7 @@ type Ad struct {
 
 type AdList struct {
 	Id       bson.ObjectId `json:"id"                bson:"_id"`
+	Profile  uint64        `json:"profile"           bson:"profile"`
 	Title    string        `json:"title"             bson:"title"`
 	Price    uint64        `json:"price"             bson:"price"`
 	Currency string        `json:"currency"          bson:"currency"`
