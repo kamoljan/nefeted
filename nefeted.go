@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kamoljan/nefeted/ad"
+	"github.com/kamoljan/nefeted/auth"
 	"github.com/kamoljan/nefeted/conf"
 )
 
@@ -17,6 +18,8 @@ func adHandler(w http.ResponseWriter, r *http.Request) {
 		ad.PostAd(w, r)
 	} else if r.Method == "GET" {
 		ad.GetAd(w, r, r.URL.Path[4:]) // /ad/52ef6ae7f12eb2aa1635f66b > 52ef6ae7f12eb2aa1635f66b
+	} else if r.Method == "DELETE" {
+		auth.DeleteAd(w, r)
 	} else {
 		http.NotFound(w, r)
 		return
